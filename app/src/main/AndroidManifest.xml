@@ -30,30 +30,29 @@
 
         <activity
             android:name=".SettingsActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="Settings"
-            android:theme="@style/Theme.MyFirstNotificationApp" />
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.MyFirstNotificationApp">
+            <!-- ADD THE INTENT-FILTER HERE -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="myfirstnotificationapp"
+                    android:host="callback" />
+            </intent-filter>
+        </activity>
 
-        <!-- NEW: Declare your Worker -->
-        <provider
-            android:name="androidx.work.impl.WorkManagerInitializer"
-            android:authorities="${applicationId}.workmanager-init"
-            android:exported="false"
-            tools:node="remove" />
-
+    <!-- WorkManager automatic initialization -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
-            <!-- If you have other initializers, they would go here -->
             <meta-data android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup" />
         </provider>
-
-        <!-- You don't explicitly declare your custom worker here unless you're using a custom WorkManager configuration.
-             WorkManager handles the registration of your specific Worker classes automatically when you enqueue them.
-             The above <provider> declarations are what's typically needed for WorkManager setup. -->
-
     </application>
 </manifest>

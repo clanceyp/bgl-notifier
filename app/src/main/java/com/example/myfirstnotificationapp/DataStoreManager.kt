@@ -24,6 +24,10 @@ class DataStoreManager(private val context: Context) {
         val EVENT_FREQUENCY = intPreferencesKey("event_frequency")
         // NEW: Key for notifications enabled
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+
+        // NEW: Keys for Dexcom Access and Refresh Tokens
+        val DEXCOM_ACCESS_TOKEN = stringPreferencesKey("dexcom_access_token")
+        val DEXCOM_REFRESH_TOKEN = stringPreferencesKey("dexcom_refresh_token")
     }
 
     // Define your fixed API path
@@ -61,6 +65,18 @@ class DataStoreManager(private val context: Context) {
             preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true
         }
 
+    // NEW: Flow to observe Dexcom Access Token
+    val dexcomAccessTokenFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.DEXCOM_ACCESS_TOKEN]
+        }
+
+    // NEW: Flow to observe Dexcom Refresh Token
+    val dexcomRefreshTokenFlow: Flow<String?> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.DEXCOM_REFRESH_TOKEN]
+        }
+
     // Function to save BASE URL
     suspend fun saveBaseUrl(baseUrl: String) {
         context.dataStore.edit { preferences ->
@@ -86,6 +102,28 @@ class DataStoreManager(private val context: Context) {
     suspend fun saveNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    // NEW: Function to save Dexcom Access Token
+    suspend fun saveDexcomAccessToken(token: String?) {
+        context.dataStore.edit { preferences ->
+            if (token != null) {
+                preferences[PreferencesKeys.DEXCOM_ACCESS_TOKEN] = token
+            } else {
+                preferences.remove(PreferencesKeys.DEXCOM_ACCESS_TOKEN)
+            }
+        }
+    }
+
+    // NEW: Function to save Dexcom Refresh Token
+    suspend fun saveDexcomRefreshToken(token: String?) {
+        context.dataStore.edit { preferences ->
+            if (token != null) {
+                preferences[PreferencesKeys.DEXCOM_REFRESH_TOKEN] = token
+            } else {
+                preferences.remove(PreferencesKeys.DEXCOM_REFRESH_TOKEN)
+            }
         }
     }
 }
