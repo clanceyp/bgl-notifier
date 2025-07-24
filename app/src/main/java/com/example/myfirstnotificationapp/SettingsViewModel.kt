@@ -36,9 +36,8 @@ class SettingsViewModel(
     private val dexcomAuthEndpoint: String,
     private val dexcomTokenEndpoint: String,
     private val dexcomScopes: String,
-// The context for WorkManager should be passed here, ideally applicationContext
-    private val applicationContext: Context, // Add applicationContext to constructor
-    private val dexcomClientSecret: String
+    private val dexcomClientSecret: String,
+    private val applicationContext: Context // Add applicationContext to constructor
 ) : ViewModel() {
 
     // --- UI State (exposed as StateFlows for Compose to observe) ---
@@ -321,8 +320,8 @@ class SettingsViewModel(
                     dexcomAuthEndpoint,
                     dexcomTokenEndpoint,
                     dexcomScopes,
-                    applicationContext, // Pass applicationContext
-                    dexcomClientSecret
+                    dexcomClientSecret,
+                    applicationContext
                 ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")

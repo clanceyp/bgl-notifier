@@ -42,6 +42,7 @@ import com.example.myfirstnotificationapp.NightscoutApiService
 import com.example.myfirstnotificationapp.dexcom.DexcomApiService
 import com.example.myfirstnotificationapp.dexcom.Egv
 import com.example.myfirstnotificationapp.ui.theme.MyFirstNotificationAppTheme
+import com.example.myfirstnotificationapp.BuildConfig
 import java.util.concurrent.TimeUnit
 
 // OkHttp and Gson imports for MainViewModelFactory
@@ -60,7 +61,15 @@ class MainActivity : ComponentActivity() {
 
         dataStoreManager = DataStoreManager(this)
         // Initialize DexcomApiService
-        dexcomApiService = DexcomApiService(OkHttpClient(), Gson(), dataStoreManager)
+        dexcomApiService = DexcomApiService(
+            OkHttpClient(),
+            Gson(),
+            dataStoreManager,
+            BuildConfig.DEXCOM_CLIENT_ID,
+            BuildConfig.DEXCOM_CLIENT_SECRET,
+            BuildConfig.DEXCOM_TOKEN_ENDPOINT,
+            BuildConfig.DEXCOM_EGV_ENDPOINT
+        )
         nightscoutApiService = NightscoutApiService(OkHttpClient(), Gson())
 
         // No need to call checkDexcomConnection() directly here anymore,
@@ -93,7 +102,8 @@ class MainActivity : ComponentActivity() {
                 // Provide the ViewModel to the Composable hierarchy
                 val mainViewModel: MainViewModel = viewModel(
                     factory = MainViewModel.Factory(
-                        dataStoreManager, dexcomApiService,
+                        dataStoreManager,
+                        dexcomApiService,
                         nightscoutApiService
                     )
                 )
@@ -237,6 +247,14 @@ class MainActivity : ComponentActivity() {
                         enabled = dexcomLoginStatus == "Logged in to Dexcom" && !isDexcomDataLoading
                     ) {
                         Text("Refresh Dexcom Data")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            finishAffinity()
+                        }
+                    ) {
+                        Text("Close")
                     }
                 }
             }

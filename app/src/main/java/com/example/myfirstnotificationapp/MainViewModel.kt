@@ -18,7 +18,7 @@ import com.google.gson.Gson
 class MainViewModel(
     private val dataStoreManager: DataStoreManager,
     private val dexcomApiService: DexcomApiService,
-    private val nightscoutApiService: NightscoutApiService // NEW: Inject NightscoutApiService
+    private val nightscoutApiService: NightscoutApiService
 ) : ViewModel() {
 
     private val _isNightscoutConnected = MutableStateFlow(false)
@@ -38,35 +38,52 @@ class MainViewModel(
 
     init {
         viewModelScope.launch {
-            _isLoadingInitialData.value = true
+            _isLoadingInitialData.value = true // Start loading indicator
 
-            // Observe Dexcom access token to update login status and trigger data fetch
+            // --- Nightscout Initial Check ---
+            // This should run immediately when the ViewModel is created
+            try {
+                val baseUrl = dataStoreManager.baseUrlFlow.first() // Get current value
+                val apiKey = dataStoreManager.apiKeyFlow.first()   // Get current value
+                Log.d("MainViewModel", "Initial Nightscout check: URL=$baseUrl, APIKey=${apiKey.length} chars")
+                val connected = nightscoutApiService.checkConnection(baseUrl, apiKey)
+                Log.d("MainViewModel", "_isNightscoutConnected: ${connected}")
+                _isNightscoutConnected.value = connected
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error during initial Nightscout check: ${e.message}", e)
+                _isNightscoutConnected.value = false
+            }
+
+            // --- Dexcom Token Observation ---
             // This collect block will run indefinitely, updating the UI as tokens change
             dataStoreManager.dexcomAccessTokenFlow.collect { token ->
                 _dexcomLoginStatus.value = if (token != null) "Logged in to Dexcom" else "Not logged in to Dexcom"
-                Log.d("MainViewModel", "_dexcomLoginStatus.value $_dexcomLoginStatus.value")
-                Log.d("MainViewModel", "token $token")
+                Log.d("MainViewModel", "Dexcom token status updated: ${if (token != null) "present" else "null"}")
                 if (token == null) {
                     _latestEgv.value = null
                 }
+                // Only fetch Dexcom data if logged in and not already loading
                 if (token != null && !_isDexcomDataLoading.value) {
                     fetchLatestDexcomEgv()
                 }
             }
+
+            // After initial checks, set loading to false
+            _isLoadingInitialData.value = false
         }
-        // Initial check for Nightscout will be done via recheckNightscoutConnection()
-        // which is called from MainActivity's onResume.
     }
 
     // Public function to re-check Nightscout connection (e.g., called from onResume)
+// This function is still useful if settings are changed and you want to force a re-check
     fun recheckNightscoutConnection() {
         viewModelScope.launch {
             _isLoadingInitialData.value = true // Indicate loading for this re-check
             try {
                 val baseUrl = dataStoreManager.baseUrlFlow.first()
                 val apiKey = dataStoreManager.apiKeyFlow.first()
-                // Use the NightscoutApiService to check connection
+                Log.d("MainViewModel", "Re-checking Nightscout: URL=$baseUrl, APIKey=${apiKey.length} chars")
                 val connected = nightscoutApiService.checkConnection(baseUrl, apiKey)
+                Log.d("MainViewModel", "_isNightscoutConnected $connected")
                 _isNightscoutConnected.value = connected
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error during Nightscout recheck: ${e.message}", e)
@@ -100,7 +117,7 @@ class MainViewModel(
     class Factory(
         private val dataStoreManager: DataStoreManager,
         private val dexcomApiService: DexcomApiService,
-        private val nightscoutApiService: NightscoutApiService // NEW: Pass NightscoutApiService
+        private val nightscoutApiService: NightscoutApiService
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainViewModel::class.java)) {

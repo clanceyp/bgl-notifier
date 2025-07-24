@@ -13,14 +13,9 @@ import com.example.myfirstnotificationapp.ui.theme.MyFirstNotificationAppTheme
 import net.openid.appauth.AuthorizationService
 import com.example.myfirstnotificationapp.R
 import kotlin.system.exitProcess // For finishAffinity alternative
+import androidx.core.net.toUri
 
 class SettingsActivity : ComponentActivity() {
-
-    private val DEXCOM_CLIENT_ID = "r9TqywzRpj0gbruswIXH2wkxt9bvrCno"
-    private val DEXCOM_REDIRECT_URI = "myfirstnotificationapp://callback"
-    private val DEXCOM_AUTH_ENDPOINT = "https://sandbox-api.dexcom.com/v2/oauth2/login"
-    private val DEXCOM_TOKEN_ENDPOINT = "https://sandbox-api.dexcom.com/v2/oauth2/token"
-    private val DEXCOM_SCOPES = "offline_access egv"
 
     private lateinit var authService: AuthorizationService
     private lateinit var dataStoreManager: DataStoreManager
@@ -63,13 +58,13 @@ class SettingsActivity : ComponentActivity() {
                     factory = SettingsViewModel.Factory(
                         dataStoreManager = dataStoreManager,
                         authService = authService,
-                        dexcomClientId = DEXCOM_CLIENT_ID,
-                        dexcomRedirectUri = DEXCOM_REDIRECT_URI,
-                        dexcomAuthEndpoint = DEXCOM_AUTH_ENDPOINT,
-                        dexcomTokenEndpoint = DEXCOM_TOKEN_ENDPOINT,
-                        dexcomScopes = DEXCOM_SCOPES,
-                        applicationContext = applicationContext,
-                        dexcomClientSecret = getString(R.string.dexcom_client_secret)
+                        dexcomClientId = BuildConfig.DEXCOM_CLIENT_ID,
+                        dexcomRedirectUri = BuildConfig.DEXCOM_REDIRECT_URI,
+                        dexcomAuthEndpoint = BuildConfig.DEXCOM_AUTH_ENDPOINT,
+                        dexcomTokenEndpoint = BuildConfig.DEXCOM_TOKEN_ENDPOINT,
+                        dexcomScopes = BuildConfig.DEXCOM_SCOPES,
+                        dexcomClientSecret = BuildConfig.DEXCOM_CLIENT_SECRET,
+                        applicationContext = applicationContext
                     )
                 )
                 SettingsScreen(
@@ -98,7 +93,7 @@ class SettingsActivity : ComponentActivity() {
 
         // Check if this intent is the redirect from the OAuth flow
         if (intent?.action == Intent.ACTION_VIEW && intent.data != null) {
-            val redirectUri = Uri.parse(getString(R.string.dexcom_redirect_uri))
+            val redirectUri = BuildConfig.DEXCOM_REDIRECT_URI.toUri()
             if (intent.data?.scheme == redirectUri.scheme && intent.data?.host == redirectUri.host) {
                 Log.d("AUTH_FLOW_DEBUG", "Redirect URI matched in onNewIntent. Passing to ViewModel.")
                 settingsViewModel.handleAuthorizationResponse(intent)

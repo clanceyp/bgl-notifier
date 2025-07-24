@@ -80,14 +80,14 @@ class DataStoreManager(private val context: Context) {
     // Function to save BASE URL
     suspend fun saveBaseUrl(baseUrl: String) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.BASE_URL] = baseUrl
+            preferences[PreferencesKeys.BASE_URL] = baseUrl.trim()
         }
     }
 
     // Function to save API Key
     suspend fun saveApiKey(apiKey: String) {
         context.dataStore.edit { preferences ->
-            preferences[PreferencesKeys.API_KEY] = apiKey
+            preferences[PreferencesKeys.API_KEY] = apiKey.trim()
         }
     }
 

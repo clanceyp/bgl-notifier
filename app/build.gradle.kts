@@ -35,7 +35,16 @@ android {
 
         buildConfigField("String", "DEXCOM_CLIENT_ID", "\"${localProperties.getProperty("dexcomClientId", "")}\"")
         buildConfigField("String", "DEXCOM_CLIENT_SECRET", "\"${localProperties.getProperty("dexcomClientSecret", "")}\"")
+        buildConfigField("String", "DEXCOM_TOKEN_ENDPOINT", "\"${localProperties.getProperty("dexcomTokenEndpoint", "")}\"")
+        buildConfigField("String", "DEXCOM_EGV_ENDPOINT", "\"${localProperties.getProperty("dexcomEgvEndpoint", "")}\"")
+        buildConfigField("String", "DEXCOM_AUTH_ENDPOINT", "\"${localProperties.getProperty("dexcomAuthEndpoint", "")}\"")
+        buildConfigField("String", "DEXCOM_REDIRECT_URI", "\"${localProperties.getProperty("dexcomRedirectUri", "")}\"")
+        buildConfigField("String", "DEXCOM_SCOPES", "\"${localProperties.getProperty("dexcomScopes", "")}\"")
 
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {

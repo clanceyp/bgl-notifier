@@ -16,9 +16,7 @@ import androidx.core.content.ContextCompat
 
 // NEW: Import for Dexcom API Service
 import com.example.myfirstnotificationapp.dexcom.DexcomApiService // Assuming this path
-// REMOVE: import com.example.myfirstnotificationapp.dexcom.DexcomTokenManager // No longer needed
-// REMOVE: import com.example.myfirstnotificationapp.NightscoutApiService // This is the class itself, not an import for a package
-
+import com.example.myfirstnotificationapp.BuildConfig
 class NotificationWorker(
     appContext: Context,
     workerParams: WorkerParameters
@@ -33,7 +31,15 @@ class NotificationWorker(
 
     // Initialize API services using the common httpClient, gson, and dataStoreManager
     private val nightscoutApiService = NightscoutApiService(httpClient, gson)
-    private val dexcomApiService = DexcomApiService(httpClient, gson, dataStoreManager)
+    private val dexcomApiService = DexcomApiService(
+        httpClient,
+        gson,
+        dataStoreManager,
+        BuildConfig.DEXCOM_CLIENT_ID,
+        BuildConfig.DEXCOM_CLIENT_SECRET,
+        BuildConfig.DEXCOM_TOKEN_ENDPOINT,
+        BuildConfig.DEXCOM_EGV_ENDPOINT
+    )
 
     override suspend fun doWork(): Result {
         try {

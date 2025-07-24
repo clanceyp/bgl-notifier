@@ -1,6 +1,7 @@
 package com.example.myfirstnotificationapp.dexcom
 
 import android.util.Log
+import com.example.myfirstnotificationapp.BuildConfig
 import com.example.myfirstnotificationapp.DataStoreManager
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -39,18 +40,12 @@ data class Egv(
 class DexcomApiService(
     private val httpClient: OkHttpClient,
     private val gson: Gson,
-    private val dataStoreManager: DataStoreManager // To save/retrieve tokens
+    private val dataStoreManager: DataStoreManager,
+    private val dexcomClientId: String,
+    private val dexcomClientSecret: String,
+    private val dexcomTokenEndpoint: String,
+    private val dexcomEgvEndpoint: String
 ) {
-    // Dexcom OAuth Configuration (should match what's in SettingsActivity)
-    private val DEXCOM_CLIENT_ID = "r9TqywzRpj0gbruswIXH2wkxt9bvrCno"
-    private val DEXCOM_CLIENT_SECRET = "AGwRRfKdwjDEQRnE" // <--- IMPORTANT: Replace with your actual Client Secret
-// In a real app, you might want to fetch this from a secure build config or server.
-// NEVER hardcode in a production app if it's client-side only.
-
-    // OAuth endpoints for Sandbox (adjust for production if needed)
-    private val DEXCOM_TOKEN_ENDPOINT = "https://sandbox-api.dexcom.com/v2/oauth2/token"
-    private val DEXCOM_EGV_ENDPOINT = "https://sandbox-api.dexcom.com/v2/users/self/egvs"
-
     // Function to refresh the access token
     suspend fun refreshAccessToken(): Boolean = withContext(Dispatchers.IO) {
         val refreshToken = dataStoreManager.dexcomRefreshTokenFlow.first()
@@ -60,14 +55,14 @@ class DexcomApiService(
         }
 
         val formBody = FormBody.Builder()
-            .add("client_id", DEXCOM_CLIENT_ID)
-            .add("client_secret", DEXCOM_CLIENT_SECRET)
+            .add("client_id", dexcomClientId)
+            .add("client_secret", dexcomClientSecret)
             .add("grant_type", "refresh_token")
             .add("refresh_token", refreshToken)
             .build()
 
         val request = Request.Builder()
-            .url(DEXCOM_TOKEN_ENDPOINT)
+            .url(dexcomTokenEndpoint)
             .post(formBody)
             .build()
 
@@ -120,7 +115,7 @@ class DexcomApiService(
         val endDate = now.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
         val startDate = now.minusSeconds(300).atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT) // Last 5 minutes
 
-        val url = "$DEXCOM_EGV_ENDPOINT?startDate=$startDate&endDate=$endDate"
+        val url = "$dexcomEgvEndpoint?startDate=$startDate&endDate=$endDate"
 
         val request = Request.Builder()
             .url(url)
