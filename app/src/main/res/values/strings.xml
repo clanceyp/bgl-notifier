@@ -1,4 +1,12 @@
 <resources>
     <string name="app_name">My First Notification App</string>
     <string name="action_settings">Settings</string>
+
+    <!-- Dexcom API Credentials -->
+    <string name="dexcom_client_secret">DEXCOME_CLIENT_SECRET</string>
+    <string name="dexcom_client_id">DEXCOME_CLIENT_ID</string>
+    <string name="dexcom_redirect_uri">myfirstnotificationapp://callback</string>
+    <string name="dexcom_auth_endpoint">https://sandbox-api.dexcom.com/v2/oauth2/login</string>
+    <string name="dexcom_token_endpoint">https://sandbox-api.dexcom.com/v2/oauth2/token</string>
+    <string name="dexcom_scopes">offline_access egv</string>
 </resources>

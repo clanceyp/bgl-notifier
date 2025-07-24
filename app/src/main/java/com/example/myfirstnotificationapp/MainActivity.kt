@@ -151,6 +151,10 @@ class MainActivity : ComponentActivity() {
         val latestEgv = mainViewModel.latestEgv.collectAsState().value
         val isDexcomDataLoading = mainViewModel.isDexcomDataLoading.collectAsState().value
 
+        Log.d("MainActivity", "dexcomLoginStatus $dexcomLoginStatus")
+        Log.d("MainActivity", "latestEgv $latestEgv")
+        Log.d("MainActivity", "isNightscoutConnected $isNightscoutConnected")
+
         // Call recheckNightscoutConnection when the activity resumes
         DisposableEffect(Unit) {
             val activity = context as? ComponentActivity

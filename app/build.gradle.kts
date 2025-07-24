@@ -1,9 +1,17 @@
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { input ->
+        localProperties.load(input)
+    }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // id("com.android.application") version "8.2.0" apply false // Or your version
-    // id("org.jetbrains.kotlin.android") version "1.9.0" apply false // Or your version
 }
 
 android {
@@ -24,6 +32,10 @@ android {
 
         // NEW: AppAuth Redirect Scheme Placeholder
         manifestPlaceholders.putAll(mapOf("appAuthRedirectScheme" to "myfirstnotificationapp"))
+
+        buildConfigField("String", "DEXCOM_CLIENT_ID", "\"${localProperties.getProperty("dexcomClientId", "")}\"")
+        buildConfigField("String", "DEXCOM_CLIENT_SECRET", "\"${localProperties.getProperty("dexcomClientSecret", "")}\"")
+
     }
 
     buildTypes {
@@ -62,12 +74,14 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("net.openid:appauth:0.11.1")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
 
-    // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3"
-    // implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
-    // implementation("androidx.work:work-runtime-ktx:2.9.0")
+
     implementation(libs.androidx.work.runtime.ktx)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0") // Use the latest stable version
+// ADD THIS EXPLICIT DEPENDENCY FOR APPCOMPAT
+    // implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

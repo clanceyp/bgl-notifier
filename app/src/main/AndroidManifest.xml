@@ -30,18 +30,26 @@
 
         <activity
             android:name=".SettingsActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="Settings"
             android:launchMode="singleTask"
             android:theme="@style/Theme.MyFirstNotificationApp">
-            <!-- ADD THE INTENT-FILTER HERE -->
+
+        </activity>
+
+        <activity
+            android:name="net.openid.appauth.AuthorizationManagementActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.AppAuth"
+            tools:node="replace">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
                 <data
                     android:scheme="myfirstnotificationapp"
-                    android:host="callback" />
+                    android:host="callback"/>
             </intent-filter>
         </activity>
 
@@ -54,5 +62,11 @@
             <meta-data android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup" />
         </provider>
+
+
+        <activity android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            tools:node="remove" />
+
+
     </application>
 </manifest>

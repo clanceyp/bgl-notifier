@@ -44,6 +44,8 @@ class MainViewModel(
             // This collect block will run indefinitely, updating the UI as tokens change
             dataStoreManager.dexcomAccessTokenFlow.collect { token ->
                 _dexcomLoginStatus.value = if (token != null) "Logged in to Dexcom" else "Not logged in to Dexcom"
+                Log.d("MainViewModel", "_dexcomLoginStatus.value $_dexcomLoginStatus.value")
+                Log.d("MainViewModel", "token $token")
                 if (token == null) {
                     _latestEgv.value = null
                 }
