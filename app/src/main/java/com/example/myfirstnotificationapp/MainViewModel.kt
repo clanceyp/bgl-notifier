@@ -96,6 +96,7 @@ class MainViewModel(
 
     fun fetchLatestDexcomEgv() {
         viewModelScope.launch {
+            Log.d("MainViewModel", "loading data")
             _isDexcomDataLoading.value = true
             try {
                 val egv = dexcomApiService.getLatestEgv()
@@ -109,6 +110,7 @@ class MainViewModel(
                 Log.e("MainViewModel", "Error fetching Dexcom EGV: ${e.message}", e)
                 _latestEgv.value = null
             } finally {
+                Log.d("MainViewModel", "loading finally")
                 _isDexcomDataLoading.value = false
             }
         }

@@ -43,11 +43,17 @@ import com.example.myfirstnotificationapp.dexcom.DexcomApiService
 import com.example.myfirstnotificationapp.dexcom.Egv
 import com.example.myfirstnotificationapp.ui.theme.MyFirstNotificationAppTheme
 import com.example.myfirstnotificationapp.BuildConfig
+import com.example.myfirstnotificationapp.GlucoseConstants.convertToMMOL
 import java.util.concurrent.TimeUnit
 
 // OkHttp and Gson imports for MainViewModelFactory
 import okhttp3.OkHttpClient
 import com.google.gson.Gson
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 class MainActivity : ComponentActivity() {
 
@@ -180,7 +186,7 @@ class MainActivity : ComponentActivity() {
 
         Scaffold(
             topBar = {
-                TopAppBar(title = { Text("My App") })
+                TopAppBar(title = { Text("") })
             }
         ) { paddingValues ->
             Column(
@@ -198,34 +204,48 @@ class MainActivity : ComponentActivity() {
                     Text("Checking connections...")
                 } else {
                     // Nightscout Status
-                    Text("Nightscout Status:", style = MaterialTheme.typography.titleMedium)
+                    Text("Nightscout Status",
+                        style = MaterialTheme.typography.headlineSmall)
                     if (isNightscoutConnected) {
-                        Text("Nightscout connection: OK", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.secondary)
+                        Text("Nightscout connection: OK",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.secondary)
                     } else {
-                        Text("Nightscout connection: NOT SET UP", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
-                        Text("Please go to settings to configure your Nightscout URL and API Key.", style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+                        Text("Nightscout connection: NOT SET UP",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error)
+                        Text("Please go to settings to configure your Nightscout URL and API Key.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center)
                     }
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Dexcom Status
-                    Text("Dexcom Status:", style = MaterialTheme.typography.titleMedium)
-                    Text(dexcomLoginStatus, style = MaterialTheme.typography.bodyLarge)
+                    Text("Dexcom Status:",
+                        style = MaterialTheme.typography.headlineSmall)
+                    Text(dexcomLoginStatus,
+                        style = MaterialTheme.typography.bodyLarge)
 
                     if (isDexcomDataLoading) {
                         CircularProgressIndicator(modifier = Modifier.size(32.dp))
                         Text("Fetching Dexcom data...")
                     } else {
                         latestEgv?.let { egv ->
-                            Text("Latest EGV: ${egv.value} mg/dL", style = MaterialTheme.typography.headlineMedium)
-                            Text("Time: ${egv.displayTime}", style = MaterialTheme.typography.bodyMedium)
+                            Text("Latest EGV: ${egv.value} | ${convertToMMOL(egv.value)} mmoL/L",
+                                style = MaterialTheme.typography.bodyLarge)
+                            // Text("Time: ${egv.displayTime}",
+                            //     style = MaterialTheme.typography.bodyMedium)
                             egv.trend?.let { trend ->
-                                Text("Trend: $trend", style = MaterialTheme.typography.bodyMedium)
+                                Text("Trend: $trend",
+                                    style = MaterialTheme.typography.bodyMedium)
                             }
                         } ?: run {
                             if (dexcomLoginStatus == "Logged in to Dexcom") {
-                                Text("No recent Dexcom data available.", style = MaterialTheme.typography.bodyLarge)
+                                Text("No recent Dexcom data available.",
+                                    style = MaterialTheme.typography.bodyLarge)
                             } else {
-                                Text("Please log in to Dexcom in settings.", style = MaterialTheme.typography.bodyLarge)
+                                Text("Please log in to Dexcom in settings.",
+                                    style = MaterialTheme.typography.bodyLarge)
                             }
                         }
                     }
@@ -268,4 +288,6 @@ class MainActivity : ComponentActivity() {
             Text("Main Screen Preview")
         }
     }
+
+
 }

@@ -17,6 +17,10 @@ import androidx.core.content.ContextCompat
 // NEW: Import for Dexcom API Service
 import com.example.myfirstnotificationapp.dexcom.DexcomApiService // Assuming this path
 import com.example.myfirstnotificationapp.BuildConfig
+import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_THRESHOLD_FOR_CONVERSION
+import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_TO_MMOL_L_CONVERSION_FACTOR
+import kotlin.math.roundToInt
+
 class NotificationWorker(
     appContext: Context,
     workerParams: WorkerParameters
@@ -115,7 +119,13 @@ class NotificationWorker(
     }
 
     // Modified to include source in log/notification text
-    private fun showNotification(n: Int, source: String) {
+    private fun showNotification(rawN: Int, source: String) {
+        val n: Int = if (rawN > MG_DL_THRESHOLD_FOR_CONVERSION) { // Using the constants
+            (rawN / MG_DL_TO_MMOL_L_CONVERSION_FACTOR).roundToInt()
+        } else {
+            rawN
+        }
+
         val numberIcons = arrayOf(
             R.drawable.ic_number_0, R.drawable.ic_number_1, R.drawable.ic_number_2,
             R.drawable.ic_number_3, R.drawable.ic_number_4, R.drawable.ic_number_5,
@@ -125,6 +135,7 @@ class NotificationWorker(
             R.drawable.ic_number_15
         )
         val safeN = n.coerceIn(0, numberIcons.size - 1)
+        Log.d("NotificationWorker", "N $n and safeN ${safeN}");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(

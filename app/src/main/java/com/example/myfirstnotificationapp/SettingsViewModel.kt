@@ -196,7 +196,7 @@ class SettingsViewModel(
                     viewModelScope.launch {
                         val accessToken = tokenResponse.accessToken
                         val refreshToken = tokenResponse.refreshToken
-                        Log.d("SettingsViewModel", "Token exchange successful. Access Token: ${accessToken?.take(10)}..., Refresh Token: ${refreshToken?.take(10)}...")
+                        // Log.d("SettingsViewModel", "Token exchange successful. Access Token: ${accessToken?.take(10)}..., Refresh Token: ${refreshToken?.take(10)}...")
                         Log.e("AUTH_FLOW_DEBUG", "Token exchange successful. Saving tokens.")
 
                         // Save tokens to DataStore

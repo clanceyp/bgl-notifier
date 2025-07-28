@@ -14,6 +14,7 @@ import okhttp3.Request
 import java.time.Instant // Requires Java 8+ or Android API 26+
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 // Data classes for parsing Dexcom API responses
 data class DexcomTokenResponse(
@@ -25,7 +26,7 @@ data class DexcomTokenResponse(
 )
 
 data class DexcomEgvResponse(
-    @SerializedName("egvs") val egvs: List<Egv>
+    @SerializedName("records") val egvs: List<Egv>
 )
 
 data class Egv(
@@ -74,7 +75,11 @@ class DexcomApiService(
 
                 dataStoreManager.saveDexcomAccessToken(tokenResponse.accessToken)
                 dataStoreManager.saveDexcomRefreshToken(tokenResponse.refreshToken) // Save new refresh token if provided
-                Log.d("DexcomApiService", "Access token refreshed successfully.")
+                Log.d("DexcomApiService", "Access token refreshed: ${tokenResponse.accessToken.takeLast(24)}")
+                Log.d("DexcomApiService", "Refresh token the same? ${tokenResponse.refreshToken == refreshToken}")
+                // Log.d("DexcomApiService", "Refresh token; ${tokenResponse.refreshToken}")
+                // Log.d("DexcomApiService", "DEBUG: Client ID used for refresh: '$dexcomClientId'")
+                // Log.d("DexcomApiService", "DEBUG: Client Secret used for refresh: '$dexcomClientSecret'")
                 return@withContext true
             } else {
                 Log.e("DexcomApiService", "Failed to refresh token: ${response.code} - ${response.message}")
@@ -100,22 +105,29 @@ class DexcomApiService(
         if (accessToken == null) {
             Log.d("DexcomApiService", "Access token is null, attempting to refresh.")
             if (!refreshAccessToken()) {
+                Log.d("DexcomApiService", "Failed to refresh token.")
                 Log.e("DexcomApiService", "Failed to refresh token, cannot get EGV.")
                 return@withContext null
             }
             accessToken = dataStoreManager.dexcomAccessTokenFlow.first() // Get the new token
             if (accessToken == null) {
+                Log.d("DexcomApiService", "Failed to refresh access token.")
                 Log.e("DexcomApiService", "Access token still null after refresh attempt.")
                 return@withContext null
             }
         }
 
         // Dexcom API requires a date range. Fetching a small range around now.
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+            .withZone(ZoneOffset.UTC)
         val now = Instant.now()
-        val endDate = now.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)
-        val startDate = now.minusSeconds(300).atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT) // Last 5 minutes
+        val endDate = formatter.format(now)
+        val startDate = now.minus(6, ChronoUnit.HOURS).let {
+            formatter.format(it.atOffset(ZoneOffset.UTC))
+        }
+        val url = "$dexcomEgvEndpoint?maxCount=1&startDate=$startDate&endDate=$endDate"
 
-        val url = "$dexcomEgvEndpoint?startDate=$startDate&endDate=$endDate"
+        Log.d("DexcomApiService", url)
 
         val request = Request.Builder()
             .url(url)
@@ -126,22 +138,27 @@ class DexcomApiService(
             val response = httpClient.newCall(request).execute()
             if (response.isSuccessful) {
                 val responseBody = response.body?.string()
-                val egvResponse = gson.fromJson(responseBody, DexcomEgvResponse::class.java)
-                Log.d("DexcomApiService", "EGV data received: ${egvResponse.egvs.size} entries.")
-                return@withContext egvResponse.egvs.maxByOrNull { Instant.parse(it.systemTime) } // Get the latest by systemTime
+                try {
+                    val egvResponse = gson.fromJson(responseBody, DexcomEgvResponse::class.java)
+                    Log.d("DexcomApiService", "EGV data received: ${egvResponse.egvs.size} entries.")
+                    return@withContext egvResponse.egvs.maxByOrNull { Instant.parse(it.systemTime) } // Get the latest by systemTime
+                } catch (e: Exception) {
+                    Log.e("DexcomApiService", "Failed to parse EGV response: $responseBody")
+                    return@withContext null
+                }
             } else if (response.code == 401) {
-                Log.w("DexcomApiService", "EGV request failed with 401. Attempting token refresh.")
+                Log.w("DexcomApiService", "EGV request failed with ${response.code}. Attempting token refresh.")
                 // Token might be expired. Try to refresh and retry the request.
                 if (refreshAccessToken()) {
                     Log.d("DexcomApiService", "Token refreshed, retrying EGV request.")
                     // Recursive call (be careful with recursion depth, but for 1 retry it's fine)
                     return@withContext getLatestEgv()
                 } else {
-                    Log.e("DexcomApiService", "Failed to refresh token after 401, cannot get EGV.")
+                    Log.e("DexcomApiService", "Failed to refresh token after ${response.code}, cannot get EGV.")
                     return@withContext null
                 }
             } else {
-                Log.e("DexcomApiService", "Failed to get EGV: ${response.code} - ${response.message}")
+                Log.e("DexcomApiService", "Failed to get EGV: ${response.code} - ${response.message} - ${response.body?.string()}")
                 return@withContext null
             }
         } catch (e: Exception) {
