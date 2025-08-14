@@ -22,6 +22,8 @@ class DataStoreManager(private val context: Context) {
         val BASE_URL = stringPreferencesKey("base_url")
         val API_KEY = stringPreferencesKey("api_key")
         val EVENT_FREQUENCY = intPreferencesKey("event_frequency")
+        val PRIORITISE_NIGHTSCOUT = booleanPreferencesKey("prioritise_nightscout")
+
         // NEW: Key for notifications enabled
         val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
 
@@ -65,6 +67,10 @@ class DataStoreManager(private val context: Context) {
             preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] ?: true
         }
 
+    val prioritiseNightscoutFlow: Flow<Boolean> = context.dataStore.data
+        .map{ preferences ->
+            preferences[PreferencesKeys.PRIORITISE_NIGHTSCOUT] ?: true
+        }
     // NEW: Flow to observe Dexcom Access Token
     val dexcomAccessTokenFlow: Flow<String?> = context.dataStore.data
         .map { preferences ->

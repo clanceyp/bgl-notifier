@@ -5,10 +5,11 @@ import com.google.gson.annotations.SerializedName
 
 // Represents a single entry from the Nightscout API
 data class NightscoutEntry(
-    @SerializedName("sgv") val sgv: Int?, // sgv can be null if not available
-// Add other fields if you need them, e.g.,
-// @SerializedName("date") val date: Long?,
-// @SerializedName("direction") val direction: String?
+    @SerializedName("sgv") val sgv: Int?,
+    @SerializedName("date") val dateTimestamp: Long?, // Epoch ms
+    @SerializedName("dateString") val dateString: String?, // ISO Date String
+    @SerializedName("direction") val direction: String?, // Direction
+    @SerializedName("trend") val trend: Int?, // Trend
 )
 
 // The top-level response is an array of NightscoutEntry objects

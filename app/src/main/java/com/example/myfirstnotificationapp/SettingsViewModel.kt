@@ -82,6 +82,12 @@ class SettingsViewModel(
             initialValue = true // Default to enabled
         )
 
+    val prioritiseNightscout: StateFlow<Boolean> = dataStoreManager.prioritiseNightscoutFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true // Default to enabled
+        )
     // --- Internal State ---
     var authServiceConfig: AuthorizationServiceConfiguration? = null
         private set

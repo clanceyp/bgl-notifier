@@ -36,6 +36,7 @@ fun SettingsScreen(
     var apiKey by remember { mutableStateOf("") }
     var eventFrequency by remember { mutableStateOf(10) }
     var notificationsEnabled by remember { mutableStateOf(true) }
+    var prioritiseNightscout by remember { mutableStateOf(true) }
 
 // Use LaunchedEffect to update local mutable states when ViewModel's StateFlows change
     LaunchedEffect(settingsViewModel.baseUrl) {
@@ -49,6 +50,9 @@ fun SettingsScreen(
     }
     LaunchedEffect(settingsViewModel.notificationsEnabled) {
         settingsViewModel.notificationsEnabled.collect { notificationsEnabled = it }
+    }
+    LaunchedEffect(settingsViewModel.prioritiseNightscout) {
+        settingsViewModel.prioritiseNightscout.collect { prioritiseNightscout = it }
     }
 
     var expanded by remember { mutableStateOf(false) }
@@ -89,8 +93,7 @@ fun SettingsScreen(
                         value = notificationsEnabled,
                         onValueChange = { notificationsEnabled = it },
                         role = Role.Switch
-                    )
-                    .padding(vertical = 8.dp),
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -98,6 +101,24 @@ fun SettingsScreen(
                 Switch(
                     checked = notificationsEnabled,
                     onCheckedChange = { notificationsEnabled = it }
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = prioritiseNightscout,
+                        onValueChange = { prioritiseNightscout = it },
+                        role = Role.Switch
+                    ),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Prioritise Nightscout", style = MaterialTheme.typography.bodyLarge)
+                Switch(
+                    checked = prioritiseNightscout,
+                    onCheckedChange = { prioritiseNightscout = it }
                 )
             }
 
@@ -137,7 +158,7 @@ fun SettingsScreen(
             }
 
             // Dexcom Connection Section
-            HorizontalDivider(modifier = Modifier.fillMaxWidth().height(1.dp).padding(vertical = 8.dp))
+            // HorizontalDivider(modifier = Modifier.fillMaxWidth().height(1.dp).padding(vertical = 8.dp))
             Text(text = "Dexcom Connection", style = MaterialTheme.typography.titleMedium)
             Text(text = dexcomLoginStatus, style = MaterialTheme.typography.bodyMedium)
             Log.d("SettingsScreen", "dexcomAccessToken : ${settingsViewModel.dexcomAccessToken}") // Access value directly for logging

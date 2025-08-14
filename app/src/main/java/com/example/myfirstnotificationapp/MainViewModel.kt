@@ -27,6 +27,12 @@ class MainViewModel(
     private val _isLoadingInitialData = MutableStateFlow(true)
     val isLoadingInitialData: StateFlow<Boolean> = _isLoadingInitialData.asStateFlow()
 
+    private val _nightscoutSgvValue = MutableStateFlow<Int?>(null)
+    val nightscoutSgvValue: StateFlow<Int?> = _nightscoutSgvValue.asStateFlow()
+
+    private val _nightscoutEgvValue = MutableStateFlow<NightscoutEntry?>(null)
+    val nightscoutEgvValue: StateFlow<NightscoutEntry?> = _nightscoutEgvValue.asStateFlow()
+
     private val _dexcomLoginStatus = MutableStateFlow("Not logged in to Dexcom")
     val dexcomLoginStatus: StateFlow<String> = _dexcomLoginStatus.asStateFlow()
 
@@ -43,12 +49,17 @@ class MainViewModel(
             // --- Nightscout Initial Check ---
             // This should run immediately when the ViewModel is created
             try {
-                val baseUrl = dataStoreManager.baseUrlFlow.first() // Get current value
-                val apiKey = dataStoreManager.apiKeyFlow.first()   // Get current value
+                val baseUrl = dataStoreManager.baseUrlFlow.first()
+                val apiKey = dataStoreManager.apiKeyFlow.first()
+                val fullUrl = dataStoreManager.fullUrlFlow.first()
                 Log.d("MainViewModel", "Initial Nightscout check: URL=$baseUrl, APIKey=${apiKey.length} chars")
                 val connected = nightscoutApiService.checkConnection(baseUrl, apiKey)
+                val sgvValueForNotification = nightscoutApiService.fetchSgvValue(fullUrl, apiKey)
+                val egvValueForNotification = nightscoutApiService.fetchEgvAsMap(fullUrl, apiKey)
                 Log.d("MainViewModel", "_isNightscoutConnected: ${connected}")
                 _isNightscoutConnected.value = connected
+                _nightscoutSgvValue.value = sgvValueForNotification
+                _nightscoutEgvValue.value = egvValueForNotification
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Error during initial Nightscout check: ${e.message}", e)
                 _isNightscoutConnected.value = false
@@ -89,6 +100,7 @@ class MainViewModel(
                 Log.e("MainViewModel", "Error during Nightscout recheck: ${e.message}", e)
                 _isNightscoutConnected.value = false
             } finally {
+                Log.d("MainViewModel", "_isNightscoutConnected finally setting to false")
                 _isLoadingInitialData.value = false // Done with re-check
             }
         }

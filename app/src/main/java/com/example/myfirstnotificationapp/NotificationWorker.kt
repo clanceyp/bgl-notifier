@@ -19,6 +19,7 @@ import com.example.myfirstnotificationapp.dexcom.DexcomApiService // Assuming th
 import com.example.myfirstnotificationapp.BuildConfig
 import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_THRESHOLD_FOR_CONVERSION
 import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_TO_MMOL_L_CONVERSION_FACTOR
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 
 class NotificationWorker(
@@ -27,7 +28,12 @@ class NotificationWorker(
 ) : CoroutineWorker(appContext, workerParams) {
 
     // Initialize common HTTP client and Gson once for all services
-    private val httpClient = OkHttpClient()
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(5, TimeUnit.SECONDS) // Connection timeout
+        .readTimeout(5, TimeUnit.SECONDS)    // Read timeout
+        .writeTimeout(5, TimeUnit.SECONDS)   // Write timeout
+        .build()
+
     private val gson = Gson()
 
     // Initialize DataStoreManager once
@@ -48,6 +54,7 @@ class NotificationWorker(
     override suspend fun doWork(): Result {
         try {
             val notificationsEnabled = dataStoreManager.notificationsEnabledFlow.first()
+            val prioritiseNightscout = dataStoreManager.prioritiseNightscoutFlow.first();
 
             if (!notificationsEnabled) {
                 Log.d("NotificationWorker", "Notifications disabled. Not performing work.")
@@ -82,7 +89,7 @@ class NotificationWorker(
             }
 
             // 2. If Dexcom failed or wasn't connected, fall back to Nightscout
-            if (sgvValueForNotification == null) {
+            if (sgvValueForNotification == null || prioritiseNightscout == true) {
                 Log.d("NotificationWorker", "Attempting to fetch SGV from Nightscout...")
                 val fullUrl = dataStoreManager.fullUrlFlow.first()
                 val apiKey = dataStoreManager.apiKeyFlow.first()
