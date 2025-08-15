@@ -1,9 +1,12 @@
 package com.example.myfirstnotificationapp
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.util.Log
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -17,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow // Still needed for _MutableStateFlow.asStateFlow()
 import kotlinx.coroutines.flow.stateIn // NEW: Import stateIn
 import kotlinx.coroutines.flow.SharingStarted // NEW: Import SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import net.openid.appauth.AuthorizationException
 import net.openid.appauth.AuthorizationRequest
@@ -29,6 +33,7 @@ import net.openid.appauth.TokenRequest
 import java.util.concurrent.TimeUnit
 
 class SettingsViewModel(
+    application: Application,
     private val dataStoreManager: DataStoreManager,
     private val authService: AuthorizationService,
     private val dexcomClientId: String,
@@ -37,8 +42,8 @@ class SettingsViewModel(
     private val dexcomTokenEndpoint: String,
     private val dexcomScopes: String,
     private val dexcomClientSecret: String,
-    private val applicationContext: Context // Add applicationContext to constructor
-) : ViewModel() {
+    // private val applicationContext: Context // Add applicationContext to constructor
+) : AndroidViewModel(application) {
 
     // --- UI State (exposed as StateFlows for Compose to observe) ---
     private val _dexcomLoginStatus = MutableStateFlow("Not connected to Dexcom")
@@ -88,6 +93,14 @@ class SettingsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = true // Default to enabled
         )
+
+    val useForegroundService: StateFlow<Boolean> = dataStoreManager.useForegroundServiceFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false // Default to false
+        )
+
     // --- Internal State ---
     var authServiceConfig: AuthorizationServiceConfiguration? = null
         private set
@@ -264,13 +277,59 @@ class SettingsViewModel(
         }
     }
 
-    // New: Function to trigger NotificationWorker
+    // --- NEW: Method to set the foreground service preference ---
+    fun setUseForegroundService(enable: Boolean) {
+        viewModelScope.launch {
+            dataStoreManager.setUseForegroundService(enable)
+            // After changing the preference, update the background sync mode
+            updateBackgroundSyncMode(enable)
+        }
+    }
+
+    // --- NEW: Method to manage starting/stopping WorkManager or ForegroundService ---
+    private fun updateBackgroundSyncMode(useForeground: Boolean) {
+        viewModelScope.launch {
+            val context = getApplication<Application>().applicationContext
+            if (useForeground) {
+                Log.d("SettingsViewModel", "Enabling Foreground Service for updates.")
+                WorkManager.getInstance(context).cancelUniqueWork("NotificationWorkerPeriodic")
+                Log.d("SettingsViewModel", "Cancelled existing periodic WorkManager.")
+
+                val serviceIntent = Intent(context, DataFetchService::class.java).apply {
+                    action = DataFetchService.ACTION_START_SERVICE
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            } else {
+                Log.d("SettingsViewModel", "Disabling Foreground Service, ensuring WorkManager state.")
+                val serviceIntent = Intent(context, DataFetchService::class.java).apply {
+                    action = DataFetchService.ACTION_STOP_SERVICE
+                }
+                context.startService(serviceIntent) // stopService is fine
+
+                // Re-evaluate WorkManager based on current notification settings
+                val currentNotificationsEnabled = notificationsEnabled.value
+                val currentEventFrequency = eventFrequency.value
+                if (currentNotificationsEnabled) {
+                    triggerNotificationWorker(context, currentEventFrequency, true)
+                    Log.d("SettingsViewModel", "Re-enqueued WorkManager periodic work.")
+                } else {
+                    WorkManager.getInstance(context).cancelUniqueWork("NotificationWorkerPeriodic")
+                    Log.d("SettingsViewModel", "WorkManager remains cancelled as notifications are disabled.")
+                }
+            }
+        }
+    }
+
     fun triggerNotificationWorker(
         context: Context,
         eventFrequencyMinutes: Int,
         notificationsEnabled: Boolean
     ) {
-        val workManager = WorkManager.getInstance(applicationContext) // Use applicationContext here
+        val workManager = WorkManager.getInstance(getApplication<Application>().applicationContext) // Use applicationContext here
         workManager.cancelUniqueWork("NotificationWorkerPeriodic")
         Log.d("SettingsViewModel", "Cancelled existing periodic work.")
 
@@ -279,7 +338,7 @@ class SettingsViewModel(
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .build()
             workManager.enqueue(oneTimeRequest)
-            Log.d("SettingsViewModel", "Enqueued one-time work request.")
+            Log.d("SettingsViewModel", "Enqueued one-time work request. ${eventFrequencyMinutes.toLong()}")
 
             val periodicRequest = PeriodicWorkRequestBuilder<NotificationWorker>(
                 eventFrequencyMinutes.toLong(),
@@ -298,13 +357,35 @@ class SettingsViewModel(
         }
     }
 
+    fun performImmediateCheck() {
+        viewModelScope.launch {
+            val isForegroundServiceEnabled = useForegroundService.first() // Get current value
+            val currentEventFrequency = eventFrequency.first()
+            val currentNotificationsEnabled = notificationsEnabled.first()
+
+            if (isForegroundServiceEnabled) {
+                Log.d("SettingsViewModel", "Foreground service enabled. Requesting immediate fetch from DataFetchService.")
+                val intent = Intent(getApplication(), DataFetchService::class.java).apply {
+                    action = DataFetchService.ACTION_PERFORM_IMMEDIATE_FETCH
+                }
+                getApplication<Application>().startService(intent) // Use startService for actions on running service
+                // Consider if you need ContextCompat.startForegroundService if there's a chance the service isn't running
+                // but for an immediate check on an *already enabled* service, startService is usually fine.
+            } else {
+                Log.d("SettingsViewModel", "Foreground service disabled. Triggering NotificationWorker for immediate check.")
+                // Pass necessary data if your worker needs it, or ensure it reads from DataStore
+                triggerNotificationWorker(getApplication(), currentEventFrequency, currentNotificationsEnabled)
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         authService.dispose()
         Log.d("SettingsViewModel", "AuthorizationService disposed.")
     }
-
     class Factory(
+        private val application: Application,
         private val dataStoreManager: DataStoreManager,
         private val authService: AuthorizationService,
         private val dexcomClientId: String,
@@ -312,13 +393,14 @@ class SettingsViewModel(
         private val dexcomAuthEndpoint: String,
         private val dexcomTokenEndpoint: String,
         private val dexcomScopes: String,
-        private val applicationContext: Context, // Add applicationContext to Factory
+        // private val applicationContext: Context, // Add applicationContext to Factory
         private val dexcomClientSecret: String
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
                 @Suppress("UNCHECKED_CAST")
                 return SettingsViewModel(
+                    application,
                     dataStoreManager,
                     authService,
                     dexcomClientId,
@@ -326,8 +408,7 @@ class SettingsViewModel(
                     dexcomAuthEndpoint,
                     dexcomTokenEndpoint,
                     dexcomScopes,
-                    dexcomClientSecret,
-                    applicationContext
+                    dexcomClientSecret
                 ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")

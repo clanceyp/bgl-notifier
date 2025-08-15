@@ -2,6 +2,7 @@
 package com.example.myfirstnotificationapp
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey // Import for booleanPreferencesKey
@@ -30,6 +31,8 @@ class DataStoreManager(private val context: Context) {
         // NEW: Keys for Dexcom Access and Refresh Tokens
         val DEXCOM_ACCESS_TOKEN = stringPreferencesKey("dexcom_access_token")
         val DEXCOM_REFRESH_TOKEN = stringPreferencesKey("dexcom_refresh_token")
+
+        val USE_FOREGROUND_SERVICE_FOR_UPDATES = booleanPreferencesKey("use_foreground_service_updates")
     }
 
     // Define your fixed API path
@@ -60,7 +63,6 @@ class DataStoreManager(private val context: Context) {
             preferences[PreferencesKeys.EVENT_FREQUENCY] ?: 10
         }
 
-    // NEW: Flow to observe Notifications Enabled state
     val notificationsEnabledFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             // Default to true if the preference is not set (e.g., for first-time users or app updates)
@@ -71,47 +73,41 @@ class DataStoreManager(private val context: Context) {
         .map{ preferences ->
             preferences[PreferencesKeys.PRIORITISE_NIGHTSCOUT] ?: true
         }
-    // NEW: Flow to observe Dexcom Access Token
+
     val dexcomAccessTokenFlow: Flow<String?> = context.dataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.DEXCOM_ACCESS_TOKEN]
         }
 
-    // NEW: Flow to observe Dexcom Refresh Token
     val dexcomRefreshTokenFlow: Flow<String?> = context.dataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.DEXCOM_REFRESH_TOKEN]
         }
 
-    // Function to save BASE URL
     suspend fun saveBaseUrl(baseUrl: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.BASE_URL] = baseUrl.trim()
         }
     }
 
-    // Function to save API Key
     suspend fun saveApiKey(apiKey: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.API_KEY] = apiKey.trim()
         }
     }
 
-    // Function to save Event Frequency
     suspend fun saveEventFrequency(frequency: Int) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.EVENT_FREQUENCY] = frequency
         }
     }
 
-    // NEW: Function to save Notifications Enabled state
     suspend fun saveNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.NOTIFICATIONS_ENABLED] = enabled
         }
     }
 
-    // NEW: Function to save Dexcom Access Token
     suspend fun saveDexcomAccessToken(token: String?) {
         context.dataStore.edit { preferences ->
             if (token != null) {
@@ -122,7 +118,6 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
-    // NEW: Function to save Dexcom Refresh Token
     suspend fun saveDexcomRefreshToken(token: String?) {
         context.dataStore.edit { preferences ->
             if (token != null) {
@@ -131,5 +126,17 @@ class DataStoreManager(private val context: Context) {
                 preferences.remove(PreferencesKeys.DEXCOM_REFRESH_TOKEN)
             }
         }
+    }
+
+    val useForegroundServiceFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.USE_FOREGROUND_SERVICE_FOR_UPDATES] ?: false // Default to false
+        }
+
+    suspend fun setUseForegroundService(enable: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.USE_FOREGROUND_SERVICE_FOR_UPDATES] = enable
+        }
+        Log.d("DataStoreManager", "Use Foreground Service set to: $enable")
     }
 }

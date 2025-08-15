@@ -166,4 +166,11 @@ class DexcomApiService(
             return@withContext null
         }
     }
+
+    suspend fun getLatestDexcomGlucoseValueAsIntConcise(): Int? {
+        val latestEgvObject: Egv? = getLatestEgv()
+        return latestEgvObject?.value // Uses the safe call operator ?.
+        // If latestEgvObject is null, this expression evaluates to null.
+        // Otherwise, it returns latestEgvObject.value (which is an Int).
+    }
 }

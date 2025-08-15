@@ -56,6 +56,7 @@ class SettingsActivity : ComponentActivity() {
             MyFirstNotificationAppTheme {
                 settingsViewModel = viewModel(
                     factory = SettingsViewModel.Factory(
+                        application,
                         dataStoreManager = dataStoreManager,
                         authService = authService,
                         dexcomClientId = BuildConfig.DEXCOM_CLIENT_ID,
@@ -64,7 +65,6 @@ class SettingsActivity : ComponentActivity() {
                         dexcomTokenEndpoint = BuildConfig.DEXCOM_TOKEN_ENDPOINT,
                         dexcomScopes = BuildConfig.DEXCOM_SCOPES,
                         dexcomClientSecret = BuildConfig.DEXCOM_CLIENT_SECRET,
-                        applicationContext = applicationContext
                     )
                 )
                 SettingsScreen(

@@ -32,9 +32,6 @@ class NightscoutApiService(
             return@withContext emptyMap
         }
 
-        // Nightscout API path for entries (usually /api/v1/entries)
-        // Ensure fullUrl already includes the base path, e.g., "https://your.nightscout.site/api/v1/entries"
-        // The count=1 and sort$-date are to get the latest entry
         val requestUrl = "$fullUrl.json?count=1&sort$-date&token=$apiKey"
         Log.d("NightscoutApiService", "URL: $requestUrl")
 

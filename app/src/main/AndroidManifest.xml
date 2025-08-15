@@ -5,6 +5,8 @@
     <!-- Your existing permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android permission FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:allowBackup="true"
@@ -34,7 +36,6 @@
             android:label="Settings"
             android:launchMode="singleTask"
             android:theme="@style/Theme.MyFirstNotificationApp">
-
         </activity>
 
         <activity
@@ -52,6 +53,11 @@
                     android:host="callback"/>
             </intent-filter>
         </activity>
+        
+        <service
+            android:name=".DataFetchService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
     <!-- WorkManager automatic initialization -->
         <provider
@@ -59,12 +65,14 @@
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
-            <meta-data android:name="androidx.work.WorkManagerInitializer"
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
                 android:value="androidx.startup" />
         </provider>
 
 
-        <activity android:name="net.openid.appauth.RedirectUriReceiverActivity"
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
             tools:node="remove" />
 
 

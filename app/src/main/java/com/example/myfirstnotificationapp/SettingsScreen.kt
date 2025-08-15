@@ -4,7 +4,9 @@ import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState // Import this
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll // Import this
 import androidx.compose.material3.* // Import all Material3 components
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,6 +40,8 @@ fun SettingsScreen(
     var notificationsEnabled by remember { mutableStateOf(true) }
     var prioritiseNightscout by remember { mutableStateOf(true) }
 
+    val useForegroundService by settingsViewModel.useForegroundService.collectAsState()
+
 // Use LaunchedEffect to update local mutable states when ViewModel's StateFlows change
     LaunchedEffect(settingsViewModel.baseUrl) {
         settingsViewModel.baseUrl.collect { baseUrl = it }
@@ -57,6 +61,7 @@ fun SettingsScreen(
 
     var expanded by remember { mutableStateOf(false) }
     val frequencyOptions = listOf(1, 3, 5, 10, 20, 30)
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -67,10 +72,12 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+
             // Nightscout Settings UI
             OutlinedTextField(
                 value = baseUrl,
@@ -86,6 +93,20 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Foreground Service (bad for battery life)")
+                Switch(
+                    checked = useForegroundService,
+                    onCheckedChange = { newValue ->
+                        settingsViewModel.setUseForegroundService(newValue)
+                    }
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -159,8 +180,8 @@ fun SettingsScreen(
 
             // Dexcom Connection Section
             // HorizontalDivider(modifier = Modifier.fillMaxWidth().height(1.dp).padding(vertical = 8.dp))
-            Text(text = "Dexcom Connection", style = MaterialTheme.typography.titleMedium)
-            Text(text = dexcomLoginStatus, style = MaterialTheme.typography.bodyMedium)
+            // Text(text = "Dexcom Connection", style = MaterialTheme.typography.titleMedium)
+            // Text(text = dexcomLoginStatus, style = MaterialTheme.typography.bodyMedium)
             Log.d("SettingsScreen", "dexcomAccessToken : ${settingsViewModel.dexcomAccessToken}") // Access value directly for logging
 
             if (dexcomAccessToken == null) {
@@ -192,37 +213,41 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
-                    Text("Logout from Dexcom")
+                    Text("$dexcomLoginStatus (Logout)")
                 }
             }
 
-            // Save Button (for Nightscout settings)
-            Button(
-                onClick = {
-                    settingsViewModel.saveNightscoutSettings(
-                        baseUrl,
-                        apiKey,
-                        eventFrequency,
-                        notificationsEnabled
-                    )
-                    Toast.makeText(context, "Settings saved!", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.fillMaxWidth()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp) // Adds space between the buttons
             ) {
-                Text("Save")
+                Button(
+                    onClick = {
+                        settingsViewModel.saveNightscoutSettings(
+                            baseUrl,
+                            apiKey,
+                            eventFrequency,
+                            notificationsEnabled
+                        )
+                        Toast.makeText(context, "Settings saved!", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.weight(1f) // Takes 50% of the available width
+                ) {
+                    Text("Save")
+                }
+
+                Button(
+                    onClick = {
+                        settingsViewModel.performImmediateCheck()
+                        Toast.makeText(context, "Checking for new glucose value...", Toast.LENGTH_SHORT).show()
+                    },
+                    modifier = Modifier.weight(1f), // Takes the other 50% of the available width
+                    enabled = notificationsEnabled
+                ) {
+                    Text("Check Now")
+                }
             }
 
-            // Check Now Button (for WorkManager)
-            Button(
-                onClick = {
-                    settingsViewModel.triggerNotificationWorker(context, eventFrequency, notificationsEnabled) // Pass context for WorkManager
-                    Toast.makeText(context, "Checking for new glucose value...", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = notificationsEnabled
-            ) {
-                Text("Check Now")
-            }
 
             // Close App Button
             Button(
@@ -232,7 +257,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
-                Text("Close App")
+                Text("Close")
             }
         }
     }
