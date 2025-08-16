@@ -26,6 +26,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_THRESHOLD_FOR_CONVERSION
 import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_TO_MMOL_L_CONVERSION_FACTOR
 import com.example.myfirstnotificationapp.GlucoseConstants.convertToMMOL
+import com.example.myfirstnotificationapp.GlucoseConstants.formatTimestampToHourMinuteLocalDateTimeOrDefault
 import com.example.myfirstnotificationapp.dexcom.DexcomApiService
 import com.google.gson.Gson // If your ApiService needs it
 import kotlinx.coroutines.flow.catch
@@ -143,14 +144,26 @@ class DataFetchService<Egv> : Service() {
 
             var sgv: Int? = null
             var source: String? = null
+            var nightscoutEntry: NightscoutEntry? = NightscoutEntry(
+                sgv = null,
+                dateTimestamp = null,
+                dateString = null,
+                direction = null,
+                trend = null
+            )
 
             Log.d(TAG, "Prioritise Nightscout: $prioritiseNightscout | $nightscoutUrl.isNotBlank()")
             if (prioritiseNightscout) {
                 if (nightscoutUrl.isNotBlank()) {
                     Log.d(TAG, "Attempting Nightscout fetch (Priority) with $nightscoutApiKey")
-                    sgv = nightscoutApiService.fetchSgvValue(nightscoutUrl, nightscoutApiKey)
+                    nightscoutEntry = nightscoutApiService.fetchSgvMap(nightscoutUrl, nightscoutApiKey)
+                    sgv = nightscoutEntry?.sgv
                     Log.d(TAG, "Nightscout fetch result: $sgv")
-                    if (sgv != null) source = "Nightscout"
+                    if (sgv != null) source = "Nightscout ${
+                        formatTimestampToHourMinuteLocalDateTimeOrDefault(
+                            nightscoutEntry.dateTimestamp
+                        )
+                    }"
                 }
                 if (sgv == null && !dexcomToken.isNullOrBlank()) {
                     Log.d(TAG, "Dexcom failed or no URL, attempting Dexcom fetch (Priority Fallback)")
@@ -165,15 +178,21 @@ class DataFetchService<Egv> : Service() {
                 }
                 if (sgv == null && nightscoutUrl.isNotBlank()) {
                     Log.d(TAG, "Dexcom failed or no token, attempting Nightscout fetch (Priority Fallback)")
-                    sgv = nightscoutApiService.fetchSgvValue(nightscoutUrl, nightscoutApiKey)
-                    if (sgv != null) source = "Nightscout"
+                    nightscoutEntry = nightscoutApiService.fetchSgvMap(nightscoutUrl, nightscoutApiKey)
+                    sgv = nightscoutEntry?.sgv
+                    Log.d(TAG, "Nightscout fetch result: $sgv")
+                    if (sgv != null) source = "Nightscout ${
+                        formatTimestampToHourMinuteLocalDateTimeOrDefault(
+                            nightscoutEntry.dateTimestamp
+                        )
+                    }"
                 }
             }
 
 
             if (sgv != null) {
                 Log.i(TAG, "Data fetched from $source: $sgv")
-                updateNotification("Latest SGV ($source): $sgv mg/dL", sgv)
+                updateNotification("$source", sgv)
             } else {
                 Log.w(TAG, "No new data fetched from any source.")
                 updateNotification("No new data available.", 0)
@@ -211,7 +230,7 @@ class DataFetchService<Egv> : Service() {
         val safeN = n.coerceIn(0, numberIcons.size - 1)
         Log.d(TAG, "evg $n and safeN ${safeN}");
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("EBGL ($contentText)")
+            .setContentTitle("EBGL - ${contentText.trim()}")
             .setContentText("mmol $n")
             .setSmallIcon(numberIcons[safeN])
             .setContentIntent(pendingIntent)

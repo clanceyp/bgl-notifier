@@ -90,6 +90,23 @@ class NightscoutApiService(
         return@withContext latestSgv;
     }
 
+    suspend fun fetchSgvMap(fullUrl: String, apiKey: String): NightscoutEntry? = withContext(Dispatchers.IO) {
+        Log.d("NightscoutApiService", "fetchSgvValue")
+        if (fullUrl.isBlank() || apiKey.isBlank()) {
+            Log.w("NightscoutApiService", "URL or API Key is blank for SGV fetch.")
+            return@withContext null
+        }
+        val map = fetchEgvAsMap(fullUrl, apiKey);
+        Log.d("NightscoutApiService", map.toString())
+        return@withContext NightscoutEntry(
+            sgv = map.sgv,
+            dateTimestamp = map.dateTimestamp,
+            dateString = map.dateString,
+            direction = map.direction,
+            trend = map.trend
+        );
+    }
+
     // Function to check if the Nightscout connection is valid
 // This will attempt to fetch a small amount of data, which is more reliable than /status.json
     suspend fun checkConnection(baseUrl: String, apiKey: String): Boolean = withContext(Dispatchers.IO) {

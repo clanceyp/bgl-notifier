@@ -271,7 +271,8 @@ class MainActivity : ComponentActivity() {
                     if (isNightscoutConnected) {
                         Text("Nightscout connection: OK",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.secondary)
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp, top = 8.dp))
                     } else {
                         Text("Nightscout connection: NOT SET UP",
                             style = MaterialTheme.typography.bodyLarge,
