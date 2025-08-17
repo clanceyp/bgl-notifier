@@ -55,7 +55,7 @@ class DataFetchService<Egv> : Service() {
         const val ACTION_STOP_SERVICE = "com.example.myfirstnotificationapp.ACTION_STOP_SERVICE"
         const val ACTION_PERFORM_IMMEDIATE_FETCH = "com.example.myfirstnotificationapp.ACTION_PERFORM_IMMEDIATE_FETCH" // New Action
         private const val NOTIFICATION_CHANNEL_ID = "DataFetchServiceChannel"
-        private const val NOTIFICATION_ID = 123
+        internal const val NOTIFICATION_ID = 123
         val EVENT_FREQUENCY_MINUTES_KEY = intPreferencesKey("event_frequency") // Changed name for clarity
         private const val DEFAULT_EVENT_FREQUENCY_MINUTES = 5 // Default if not set
         private const val TAG = "DataFetchService"

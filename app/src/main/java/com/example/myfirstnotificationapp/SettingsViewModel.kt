@@ -1,6 +1,7 @@
 package com.example.myfirstnotificationapp
 
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -285,6 +286,7 @@ class SettingsViewModel(
             updateBackgroundSyncMode(enable)
         }
     }
+    private val notificationManager = getApplication<Application>().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     // --- NEW: Method to manage starting/stopping WorkManager or ForegroundService ---
     private fun updateBackgroundSyncMode(useForeground: Boolean) {
@@ -294,6 +296,7 @@ class SettingsViewModel(
                 Log.d("SettingsViewModel", "Enabling Foreground Service for updates.")
                 WorkManager.getInstance(context).cancelUniqueWork("NotificationWorkerPeriodic")
                 Log.d("SettingsViewModel", "Cancelled existing periodic WorkManager.")
+                notificationManager.cancel(DataFetchService.NOTIFICATION_ID)
 
                 val serviceIntent = Intent(context, DataFetchService::class.java).apply {
                     action = DataFetchService.ACTION_START_SERVICE
@@ -319,6 +322,7 @@ class SettingsViewModel(
                 } else {
                     WorkManager.getInstance(context).cancelUniqueWork("NotificationWorkerPeriodic")
                     Log.d("SettingsViewModel", "WorkManager remains cancelled as notifications are disabled.")
+                    notificationManager.cancel(DataFetchService.NOTIFICATION_ID)
                 }
             }
         }

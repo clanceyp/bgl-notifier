@@ -210,7 +210,6 @@ fun SettingsScreen(
                         settingsViewModel.performDexcomLogout()
                         Log.d("SettingsScreen", "Local Dexcom logout initiated.")
                     },
-                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                 ) {
                     Text("$dexcomLoginStatus (Logout)")
@@ -254,7 +253,6 @@ fun SettingsScreen(
                 onClick = {
                     onCloseApp() // Use the callback
                 },
-                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
             ) {
                 Text("Close")
