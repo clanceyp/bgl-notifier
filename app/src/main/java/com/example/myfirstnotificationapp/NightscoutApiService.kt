@@ -48,7 +48,6 @@ class NightscoutApiService(
                 val entries = gson.fromJson(responseBody, Array<NightscoutEntry>::class.java).toList()
 
                 Log.d("NightscoutApiService", "Nightscout Raw Response: $responseBody")
-                // Log.d("NightscoutApiService", "entries: $responseBody")
 
                 if (entries.isNotEmpty()) {
                     val latestSgv = entries.first().sgv

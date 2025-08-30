@@ -213,11 +213,7 @@ class DataFetchService<Egv> : Service() {
         }
         Log.d(TAG, "createNotification $egv = $n")
         val notificationIntent = Intent(this, MainActivity::class.java)
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
+        val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, pendingIntentFlags)
         val numberIcons = arrayOf(
             R.drawable.ic_number_0, R.drawable.ic_number_1, R.drawable.ic_number_2,

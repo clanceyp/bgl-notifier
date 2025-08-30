@@ -130,7 +130,7 @@ class DataStoreManager(private val context: Context) {
 
     val useForegroundServiceFlow: Flow<Boolean> = context.dataStore.data
         .map { preferences ->
-            preferences[PreferencesKeys.USE_FOREGROUND_SERVICE_FOR_UPDATES] ?: false // Default to false
+            preferences[PreferencesKeys.USE_FOREGROUND_SERVICE_FOR_UPDATES] ?: true
         }
 
     suspend fun setUseForegroundService(enable: Boolean) {

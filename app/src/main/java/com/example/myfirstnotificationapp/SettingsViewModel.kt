@@ -99,7 +99,7 @@ class SettingsViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false // Default to false
+            initialValue = true
         )
 
     // --- Internal State ---
