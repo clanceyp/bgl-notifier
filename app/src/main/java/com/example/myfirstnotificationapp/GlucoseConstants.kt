@@ -13,6 +13,13 @@ import kotlin.text.format
 object GlucoseConstants { // Using an 'object' for namespacing
     const val MG_DL_TO_MMOL_L_CONVERSION_FACTOR = 18.018f
     const val MG_DL_THRESHOLD_FOR_CONVERSION = 30
+    fun convertToMMOLIfOverThreshHold(n: Int): Int {
+        if (n > MG_DL_THRESHOLD_FOR_CONVERSION) {
+            return convertToMMOL(n)
+        } else {
+            return n
+        }
+    }
     fun convertToMMOL(n: Int): Int {
        return  (n / MG_DL_TO_MMOL_L_CONVERSION_FACTOR).roundToInt()
     }

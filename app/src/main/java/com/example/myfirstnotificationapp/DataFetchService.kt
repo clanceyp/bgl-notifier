@@ -23,9 +23,7 @@ import androidx.core.app.NotificationCompat
 import androidx.datastore.core.IOException
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
-import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_THRESHOLD_FOR_CONVERSION
-import com.example.myfirstnotificationapp.GlucoseConstants.MG_DL_TO_MMOL_L_CONVERSION_FACTOR
-import com.example.myfirstnotificationapp.GlucoseConstants.convertToMMOL
+import com.example.myfirstnotificationapp.GlucoseConstants.convertToMMOLIfOverThreshHold
 import com.example.myfirstnotificationapp.GlucoseConstants.formatTimestampToHourMinuteLocalDateTimeOrDefault
 import com.example.myfirstnotificationapp.dexcom.DexcomApiService
 import com.google.gson.Gson // If your ApiService needs it
@@ -34,9 +32,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import okhttp3.OkHttpClient // If your ApiService needs it
 import java.util.concurrent.TimeUnit // For OkHttpClient config
-import kotlin.math.roundToInt
-import kotlin.text.first
-import kotlin.text.toLong
 
 
 class DataFetchService<Egv> : Service() {
@@ -206,11 +201,7 @@ class DataFetchService<Egv> : Service() {
 
 
     private fun createNotification(contentText: String, egv: Int): Notification {
-        val n: Int = if (egv > MG_DL_THRESHOLD_FOR_CONVERSION) {
-            convertToMMOL(egv)
-        } else {
-            egv
-        }
+        val n: Int = convertToMMOLIfOverThreshHold(egv)
         Log.d(TAG, "createNotification $egv = $n")
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
@@ -224,12 +215,14 @@ class DataFetchService<Egv> : Service() {
             R.drawable.ic_number_15
         )
         val safeN = n.coerceIn(0, numberIcons.size - 1)
+        val iconResId = numberIcons[safeN]
         Log.d(TAG, "evg $n and safeN ${safeN}");
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setSmallIcon(iconResId)
             .setContentTitle("EBGL - ${contentText.trim()}")
             .setContentText("mmol $n")
-            .setSmallIcon(numberIcons[safeN])
             .setContentIntent(pendingIntent)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setOngoing(true)
             .setSilent(true)
             .build()
